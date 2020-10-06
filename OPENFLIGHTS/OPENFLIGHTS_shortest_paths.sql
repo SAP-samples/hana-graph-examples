@@ -2,8 +2,9 @@
 -- This script demonstrates the use of SAP HANA Graph features, especially shortest path queries.
 -- It was developed on SAP HANA Cloud version 4.00.000.00.1600157276 (2020 Q3).
 -- You can run the example on a SAP HANA Cloud Trial using a SQL Editor, e.g. SAP HANA Database Explorer
+-- For getting started with SAP HANA Cloud triel, see  https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html
 
--- The script has 4 parts:
+-- this script has 4 parts:
 -- 1 create tables, graph workspace, and procedures
 -- 2 load data from flat files into the tables (or just use some dummy data)
 -- 3 data transformations, e.g. point geometries are created from LAT/LON coordinates
@@ -212,7 +213,9 @@ END;
 -- Rename the .dat files to .csv
 -- Import the data with the flat file import wizard in SAP HANA Database Explorer
 -- https://help.sap.com/viewer/a2cea64fa3ac4f90a52405d07600047b/cloud/en-US/ee0e1389fde345fa8ccf937f19c99c30.html
--- Right-click the IMP_AIRPORTS/IMP_ROUTES table and choose "import data", point to the appropriate flat file and complete the wizard..
+-- Right-click the IMP_AIRPORTS/IMP_ROUTES table and choose "import data", point to the appropriate flat file and complete the wizard.
+-- In step 1 of the wizard, uncheck "files has header in the first row".
+-- In setp 2, just map the columns one-by-on. The order of columns in the flat file is the same as in the database table.
 
 -- (B) if you don't want to import the OPENFLIGHTS data, you can also create some dummy data:
 INSERT INTO "OPENFLIGHTS_VERTICES" ("ID","NAME","CITY","COUNTRY") VALUES (999998,'Walldorf Airport','Walldorf','Germany');
