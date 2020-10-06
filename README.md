@@ -4,7 +4,7 @@ SAP HANA includes a graph engine for network analysis. The shortest path example
 ## Description
 SAP HANA's built-in graph algorithms, e.g. for shortest path finding, can invoked within database procedures using the language "GRAPH". The procedures are called from SQL, which is a nice way to integrate graph processing with relational. The "GraphScript" examples included in this repository help you understand the power of the language and also provide code snippets and reuse templates.
 
-Some self-contained examples are in the [GRAPH_PROCEDURES_EXAMPLES](GRAPH_PROCEDURES_EXAMPLES) folder. Some more advanced samples are based on a flight routes dataset [OPENFLIGHTS](OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).
+Some self-contained examples are in the [GRAPH_PROCEDURES_EXAMPLES](GRAPH_PROCEDURES_EXAMPLES/) folder. Some more advanced samples are based on a flight routes dataset [OPENFLIGHTS](OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).
 
 ## Requirements
 In order to run the examples yourself you need a SAP HANA Cloud system and a basic understand of SQL. To get a system you can register for a trial https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html. Once set up and connected, you just need to open the SQL Editor in the SAP HANA Database Explorer and run the statements in the script.
