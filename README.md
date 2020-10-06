@@ -8,7 +8,7 @@ Some self-contained examples are in the [GRAPH_PROCEDURES_EXAMPLES](https://gith
 
 ## Requirements
 In order to run the examples yourself you need a SAP HANA Cloud system and a basic understand of SQL. To get a system you can register for a trial https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html. Once set up and connected, you just need to open the SQL Editor in the SAP HANA Database Explorer and run the statements in the script.
-Some of the examples are self contained, others are made for external datasets (e.g. https://openflights.org/data.html) which can be downloaded and imported into HANA tables.
+Some of the examples are self-contained, others are made for external datasets (e.g. https://openflights.org/data.html) which can be downloaded and imported into HANA tables.
 
 ## Download and Installation
 The .sql scripts can just be copied to a SQL Editor and executed.
