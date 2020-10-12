@@ -1,4 +1,4 @@
-# hana-graph-examples
+# SAP HANA Graph Examples
 SAP HANA includes a graph engine for network analysis. The examples demonstrate the usage of built-in algorithms, e.g. for path finding.
 
 ## Description
