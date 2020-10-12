@@ -1,13 +1,13 @@
-# hana-graph-shortest-paths
-SAP HANA includes a graph engine for network analysis. The shortest path examples demonstrate the usage of built-in algorithms for path finding.
+# hana-graph-examples
+SAP HANA includes a graph engine for network analysis. The examples demonstrate the usage of built-in algorithms, e.g. for path finding.
 
 ## Description
-SAP HANA's built-in graph algorithms, e.g. for shortest path finding, can be invoked within database procedures. The procedures are called from SQL, which is a nice way to integrate graph processing with relational. The ["GRAPH"](link to folder) procedure examples included in this repository help you understand the power of the language and also provide code snippets and reuse templates.
+SAP HANA's built-in graph algorithms, e.g. for shortest path finding, can be invoked within database procedures. The procedures are called from SQL, which is a nice way to integrate graph processing with relational. The sample procedures included in this repository help you understand the power of the language and also provide code snippets and reuse templates.
 
-Some self-contained examples are in the [GRAPH_PROCEDURES_EXAMPLES](https://github.com/SAP-samples/hana-graph-shortest-paths/tree/main/GRAPH_PROCEDURE_EXAMPLES) folder. Some more advanced samples are based on a flight routes dataset [OPENFLIGHTS](OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).
+Some self-contained examples are in the [GRAPH_PROCEDURES_EXAMPLES](https://github.com/SAP-samples/hana-graph-examples/tree/main/GRAPH_PROCEDURE_EXAMPLES) folder. Some more advanced samples, specifically related to path finding, are based on a flight routes dataset [OPENFLIGHTS](OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).
 
 ## Requirements
-In order to run the examples yourself you need a SAP HANA Cloud system and a basic understand of SQL. To get a system you can register for a trial https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html. Once set up and connected, you just need to open the SQL Editor in the SAP HANA Database Explorer and run the statements in the script.
+In order to run the examples yourself you need a SAP HANA Cloud system and a basic understand of SQL. To get a system yourself, just register for a trial https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html. Once set up and connected, you just need to open the SQL Editor of the SAP HANA Database Explorer and run the statements in the script.
 Some of the examples are self-contained, others are made for external datasets (e.g. https://openflights.org/data.html) which can be downloaded and imported into HANA tables.
 
 ## Download and Installation
