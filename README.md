@@ -4,7 +4,7 @@ SAP HANA includes a graph engine for network analysis. The examples demonstrate 
 ## Description
 SAP HANA's built-in graph algorithms, e.g. for shortest path finding, can be invoked within database procedures. The procedures are called from SQL, which is a nice way to integrate graph processing with relational. The sample procedures included in this repository help you understand the power of the language and also provide code snippets and reuse templates.
 
-Self-contained scripts are in the GRAPH_PROCEDURES_EXAMPLES folder. You'll find templates for the built-in algorithms, e.g. [BFS](GRAPH_PROCEDURE_EXAMPLES\BUILTIN_FUNCTIONS_ALGORITHMS\HANA_Cloud_2020Q2_Breadth_First_Search.sql), and samples for common algorithms like [closeness centrality](GRAPH_PROCEDURE_EXAMPLES\BUILTIN_FUNCTIONS_ALGORITHMS\HANA_Cloud_2020Q2_Closeness_Centrality.sql). A more advanced script, specifically related to path finding, is based on a flight routes dataset [OPENFLIGHTS](OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).
+Self-contained scripts are in the GRAPH_PROCEDURES_EXAMPLES folder. You'll find templates for the built-in algorithms, e.g. [BFS](GRAPH_PROCEDURE_EXAMPLES\BUILTIN_FUNCTIONS_ALGORITHMS\HANA_Cloud_2020Q2_Breadth_First_Search.sql), and templates for common algorithms like [closeness centrality](GRAPH_PROCEDURE_EXAMPLES\BUILTIN_FUNCTIONS_ALGORITHMS\HANA_Cloud_2020Q2_Closeness_Centrality.sql). A more advanced script, specifically related to path finding, is based on a flight routes dataset [OPENFLIGHTS](OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).
 
 ## Requirements
 In order to run the examples yourself you need a SAP HANA Cloud system and a basic understand of SQL. To get a system yourself, just [register for a trial](https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html). Once set up and connected, you just need to open the SQL Editor of the SAP HANA Database Explorer and run the statements in the script.
@@ -23,8 +23,7 @@ None.
 This project is provided "as-is" - there is no guarantee that raised issues will be answered or addressed in future releases.
 
 ## Contributing
-Details on how external developers can contribute to your code should be posted here. See Setting guidelines for repository contributors on GitHub.com about adding a Contributing.md file.
-If your project is only updated by SAP employees or only accepting bug reports but no other contributions, then please state this in this section to avoid externals to open pull requests which will not be considered.
+At this point, the repository is maintained by SAP only. External contributions will not be considered. However, you are welcome to open a bug report.
 
 ## To-Do (upcoming changes)
 We plan to include additional examples and a ready to deploy HANA database module later.
