@@ -1,6 +1,7 @@
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP-samples/hana-graph-examples)](https://api.reuse.software/info/github.com/SAP-samples/hana-graph-examples)
+
 # SAP HANA Graph Examples
 SAP HANA includes a graph engine for network analysis. The examples demonstrate the usage of built-in algorithms, e.g. for path finding.
-[![REUSE status](https://api.reuse.software/badge/github.com/SAP-samples/hana-graph-examples)](https://api.reuse.software/info/github.com/SAP-samples/hana-graph-examples)
 
 ## Description
 SAP HANA's built-in graph algorithms, e.g. for shortest path finding, can be invoked within database procedures. The procedures are called from SQL, which is a nice way to integrate graph processing with relational. The sample procedures included in this repository help you understand the power of the language and also provide code snippets and reuse templates.
