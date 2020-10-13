@@ -2,7 +2,7 @@
 -- This script demonstrates the use of SAP HANA Graph features, especially shortest path queries.
 -- It was developed on SAP HANA Cloud version 4.00.000.00.1600157276 (2020 Q3).
 -- You can run the example on a SAP HANA Cloud Trial using a SQL Editor, e.g. SAP HANA Database Explorer
--- For getting started with SAP HANA Cloud triel, see  https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html
+-- For getting started with SAP HANA Cloud trial, see  https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html
 
 -- this script has 4 parts:
 -- 1 create tables, graph workspace, and procedures
@@ -110,7 +110,7 @@ CREATE TYPE "TT_OPENFLIGHTS_PATHS_TKSP" AS TABLE ("PATH_ID" INT,"PATH_LENGTH" BI
 CREATE OR REPLACE PROCEDURE "OPENFLIGHTS_SHORTEST_PATH_ONE_TO_ONE"(
 	IN i_startVertex BIGINT, 		-- the ID of the start vertex
 	IN i_endVertex BIGINT, 			-- the ID of the end vertex
-	IN i_direction NVARCHAR(10), 	-- the the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
+	IN i_direction NVARCHAR(10), 	-- the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
 	IN i_maxSegmentDistance DOUBLE,	-- optional, for variant 3 it defines th max distance of a single route segment
 	OUT o_path_length BIGINT,		-- the hop distance between start and end
 	OUT o_path_weight DOUBLE,		-- the path weight based on the DIST_KM attribute
@@ -130,10 +130,13 @@ BEGIN
 	-- Create an instance of the start/end vertex
 	VERTEX v_start = Vertex(:g, :i_startVertex);
 	VERTEX v_end = Vertex(:g, :i_endVertex);
+
 	-- Variant 1 - Running shortest path using hop distance
 	--WeightedPath<BIGINT> p = Shortest_Path(:g, :v_start, :v_end, :i_direction);
+
 	-- Variant 2 - Running shortest path using the DIST_KM column as cost
 	WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end, (Edge e) => DOUBLE{ return :e."DIST_KM"; }, :i_direction);
+
 	-- Variant 3 - Running shortest path using the DIST_KM column as cost and an additional stop condition: only take routes which are <= i_max_SegmentDistance
 	/*WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end,
 		(EDGE e)=> DOUBLE{
@@ -141,6 +144,7 @@ BEGIN
             ELSE { END TRAVERSE; }
   		},
 	:i_direction);*/
+
 	-- Variant 4 - Running shortest path using the DIST_KM column as cost and an additional stop condition based on the current/partial path length
 	/*WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end,
 		(EDGE e, DOUBLE current_path_length)=> DOUBLE{
@@ -148,6 +152,7 @@ BEGIN
             ELSE { END TRAVERSE; }
   		},
 	:i_direction);*/
+
 	-- Project the results from the path
 	o_path_length = LENGTH(:p);
 	o_path_weight = DOUBLE(WEIGHT(:p));
@@ -158,7 +163,7 @@ END;
 -- (B) Shortest Path One-to-All
 CREATE OR REPLACE PROCEDURE "OPENFLIGHTS_SHORTEST_PATH_ONE_TO_ALL"(
 	IN i_startVertex BIGINT, 		-- the key of the start vertex
-	IN i_direction NVARCHAR(10), 	-- the the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
+	IN i_direction NVARCHAR(10), 	-- the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
 	OUT o_vertices "TT_OPENFLIGHTS_VERTICES_SPOA",
 	OUT o_edges "TT_OPENFLIGHTS_EDGES_SPOA"
 	)
