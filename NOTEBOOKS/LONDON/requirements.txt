@@ -1,0 +1,8 @@
+hana-ml>=2.6.20101606
+hdbcli>=2.6.58
+keplergl>=0.2.0
+osmnx>=0.15.1
+pandas>=1.0.5
+geopandas>=0.8.1
+matplotlib>=3.3
+numpy>=1.19
