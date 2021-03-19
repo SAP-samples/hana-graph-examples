@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - Topological Sort
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2021-04-01
+-- This script was developed for SAP HANA Cloud 2020 Q4
 -- Wikipedia https://en.wikipedia.org/wiki/Topological_sorting
 /*************************************/
 
@@ -55,36 +55,71 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 
 /****************************************************/
 -- procedure Topologial Sort
-CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES" AS TABLE ("ID" BIGINT, "REV_ORDER" BIGINT);
+CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES" AS TABLE ("ID" BIGINT, "EXIT_ORDER" BIGINT, "DEPTH" BIGINT);
 
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_TOPOLOGICAL_SORT" (
-		OUT o_res "GRAPHSCRIPT"."TT_VERTICES"
-	)
-	LANGUAGE GRAPH READS SQL DATA AS
+    OUT o_vertices "GRAPHSCRIPT"."TT_VERTICES",
+    OUT o_isSortable INT
+)
+LANGUAGE GRAPH READS SQL DATA AS
 BEGIN
-	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
-	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "REV_ORDER" = 0L);
-
-	BIGINT c_exitOrder = 1L;
-	FOREACH v_start IN Vertices(:g) {
-		IF (:v_start."REV_ORDER" == 0L) {
-			TRAVERSE DFS :g FROM :v_start ON EXIT VERTEX (Vertex v) {
-				v."REV_ORDER" = :c_exitOrder;
-				c_exitOrder = :c_exitOrder + 1L;
-	        };
-		}
-	}
-	o_res = SELECT :v."ID", :v."REV_ORDER" FOREACH v IN Vertices(:g);
+    GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+    ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "IN_DEGREE");
+    ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "VISIT_ORDER");
+    ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "EXIT_ORDER");
+    ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "DEPTH");
+    o_isSortable = 1;
+    BIGINT c_visit = 0L;
+    BIGINT c_exit = 0L;
+    FOREACH v IN VERTICES(:G) {
+        v."IN_DEGREE" = IN_DEGREE(:v);
+    }
+    MULTISET<VERTEX> m_nodes = v IN VERTICES(:G) WHERE :v."IN_DEGREE" == 0L;
+    IF (COUNT(:m_nodes) == 0L) { 
+        o_isSortable = 0;
+        RETURN; 
+    }
+    FOREACH v_start in :m_nodes {
+        TRAVERSE DFS('OUTGOING') :g FROM :v_start
+            ON VISIT VERTEX (VERTEX v_visited, BIGINT lvl) {
+                IF (:v_visited."VISIT_ORDER" IS NULL) {
+                    c_visit = :c_visit + 1L;
+                    v_visited."VISIT_ORDER" = :c_visit;
+                    v_visited."DEPTH" = :lvl;
+                }
+                ELSE { END TRAVERSE; }
+            }
+            ON EXIT VERTEX (VERTEX v_exited) {
+                IF (:v_exited."EXIT_ORDER" IS NULL) {
+                    c_exit = :c_exit + 1L;
+                    v_exited."EXIT_ORDER" = :c_exit;
+                }
+            }
+            ON VISIT EDGE (EDGE e_visited) {
+                VERTEX S = SOURCE(:e_visited);
+                VERTEX T = TARGET(:e_visited);
+                IF (:T."VISIT_ORDER" IS NOT NULL AND :T."EXIT_ORDER" IS NULL) {
+                    o_isSortable = 0;
+                    END TRAVERSE ALL;
+                }
+            };
+    }
+    IF ( :o_isSortable == 1 ) {
+        SEQUENCE<VERTEX> s_ordered_vertices = SEQUENCE<VERTEX>(Vertices(:g)) ORDER BY "EXIT_ORDER" DESC;
+        o_vertices = SELECT :v."ID", :v."EXIT_ORDER", :v."DEPTH" FOREACH v IN :s_ordered_vertices;
+    }
 END;
-CALL "GRAPHSCRIPT"."GS_TOPOLOGICAL_SORT"(?);
+
+CALL "GRAPHSCRIPT"."GS_TOPOLOGICAL_SORT"(?, ?);
 
 -- Optional: wrap the procedure in a function
 CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_TOPOLOGICAL_SORT" ()
     RETURNS "GRAPHSCRIPT"."TT_VERTICES"
 LANGUAGE SQLSCRIPT READS SQL DATA AS
 BEGIN
-    CALL "GRAPHSCRIPT"."GS_TOPOLOGICAL_SORT"(o_res);
+	DECLARE o_isSortable INT;
+    CALL "GRAPHSCRIPT"."GS_TOPOLOGICAL_SORT"(o_res, o_isSortable);
     RETURN :o_res;
 END;
 
-SELECT * FROM "GRAPHSCRIPT"."F_TOPOLOGICAL_SORT"() ORDER BY "REV_ORDER" DESC;
+SELECT * FROM "GRAPHSCRIPT"."F_TOPOLOGICAL_SORT"() ORDER BY "EXIT_ORDER" DESC;

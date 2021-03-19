@@ -79,3 +79,29 @@ END;
 
 -- Finding the top 2 shortest paths between vertex "1" and "4"
 CALL "GRAPHSCRIPT"."GS_TKSP"(i_startVertex => 1, i_endVertex => 4, i_k => 2, o_paths => ?);
+
+-- As an alternative you can also run the Top k Shortest Paths as a so called anonymous block
+DO (
+	IN i_startVertex BIGINT => 1,
+	IN i_endVertex BIGINT => 4,
+	IN i_k INT => 2,
+	OUT o_paths TABLE ("PATH_ID" INT, "PATH_LENGTH" BIGINT, "PATH_WEIGHT" DOUBLE, "EDGE_ID" BIGINT, "EDGE_ORDER" INT) => ?
+	)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	VERTEX v_start = Vertex(:g, :i_startVertex);
+	VERTEX v_end = Vertex(:g, :i_endVertex);
+	SEQUENCE<WeightedPath<DOUBLE>> s_paths = K_Shortest_Paths(:g, :v_start, :v_end, :i_k, (Edge e) => DOUBLE{ return :e."WEIGHT"; });
+	BIGINT currentResultRow = 1L;
+	FOREACH result_path IN (:s_paths) WITH ORDINALITY AS path_id {
+		FOREACH path_edge in EDGES(:result_path) WITH ORDINALITY AS edge_order {
+			o_paths."PATH_ID"[:currentResultRow] = INTEGER(:path_id);
+			o_paths."PATH_LENGTH"[:currentResultRow] = Length(:result_path);
+			o_paths."PATH_WEIGHT"[:currentResultRow] = Weight(:result_path);
+			o_paths."EDGE_ID"[:currentResultRow] = :path_edge."ID";
+			o_paths."EDGE_ORDER"[:currentResultRow] = INTEGER(:edge_order);
+			currentResultRow = :currentResultRow + 1L;
+		}
+	}
+END;

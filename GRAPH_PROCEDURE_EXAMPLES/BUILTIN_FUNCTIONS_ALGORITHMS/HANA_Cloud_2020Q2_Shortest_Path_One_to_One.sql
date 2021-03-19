@@ -79,3 +79,31 @@ END;
 
 -- Finding the shortest path between vertex "1" and "4", traversing edges in any direction
 CALL "GRAPHSCRIPT"."GS_SPOO"(i_startVertex => 1, i_endVertex => 4, i_direction => 'ANY', o_path_length => ?, o_path_weight => ?, o_vertices => ?, o_edges => ?);
+
+
+-- As an alternative you can run the Shortest path as a so called anonymous block
+DO (
+	IN i_startVertex BIGINT => 1,
+	IN i_endVertex BIGINT => 4,
+	IN i_direction NVARCHAR(10) => 'ANY',
+	OUT o_path_length BIGINT => ?,
+	OUT o_path_weight DOUBLE => ?,
+	OUT o_vertices TABLE ("ID" BIGINT, "VERTEX_ORDER" BIGINT) => ?,
+	OUT o_edges TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "EDGE_ORDER" BIGINT) => ?
+	)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	IF (NOT VERTEX_EXISTS(:g, :i_startVertex) OR NOT VERTEX_EXISTS(:g, :i_endVertex)) {
+		o_path_length = 0L;
+		o_path_weight = 0.0;
+		return;
+	}
+	VERTEX v_start = Vertex(:g, :i_startVertex);
+	VERTEX v_end = Vertex(:g, :i_endVertex);
+	WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end, (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_direction);
+	o_path_length = LENGTH(:p);
+	o_path_weight = WEIGHT(:p);
+	o_vertices = SELECT :v."ID", :VERTEX_ORDER FOREACH v IN Vertices(:p) WITH ORDINALITY AS VERTEX_ORDER;
+	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET", :EDGE_ORDER FOREACH e IN Edges(:p) WITH ORDINALITY AS EDGE_ORDER;
+END;

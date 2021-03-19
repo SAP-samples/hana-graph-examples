@@ -43,7 +43,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 -- How to use the SHORTEST_PATH_ONE_TO_ALL function in a GRAPH"Script" procedure
 -- The procedure identifies the shortest paths, given two input parameters: i_startVertex, traversing edges in i_direction
 -- The procedure returns a table containing the reachable vertices, and traversed edges
-CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES_SPOA" AS TABLE ("ID" BIGINT, "CALCULATED_COST" DOUBLE);
+CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES_SPOA" AS TABLE ("ID" BIGINT, "DISTANCE" DOUBLE);
 CREATE TYPE "GRAPHSCRIPT"."TT_EDGES_SPOA" AS TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "WEIGHT" DOUBLE);
 
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_SPOA"(
@@ -59,10 +59,27 @@ BEGIN
 	-- Create an instance of the start vertex
 	VERTEX v_start = Vertex(:g, :i_startVertex);
 	-- Running shortest paths one to all, which returns a subgraph. The WEIGHT based path length to a vertex is stored in the attribute CALCULATED_COST
-	GRAPH g_spoa = SHORTEST_PATHS_ONE_TO_ALL(:g, :v_start, "CALCULATED_COST", (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_direction);
-	o_vertices = SELECT :v."ID", :v."CALCULATED_COST" FOREACH v IN Vertices(:g_spoa);
+	GRAPH g_spoa = SHORTEST_PATHS_ONE_TO_ALL(:g, :v_start, "DISTANCE", (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_direction);
+	o_vertices = SELECT :v."ID", :v."DISTANCE" FOREACH v IN Vertices(:g_spoa);
 	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET", :e."WEIGHT" FOREACH e IN Edges(:g_spoa);
 END;
 
 CALL "GRAPHSCRIPT"."GS_SPOA"(i_startVertex => 1, i_direction => 'OUTGOING', o_vertices => ?, o_edges => ?);
 CALL "GRAPHSCRIPT"."GS_SPOA"(i_startVertex => 1, i_direction => 'ANY', o_vertices => ?, o_edges => ?);
+
+-- as an alternative, you can also run the Shortest Path On to All as a so called anonymous block 
+DO (
+	IN i_startVertex BIGINT => 1,
+	IN i_direction NVARCHAR(10) => 'OUTGOING',
+	OUT o_vertices TABLE ("ID" BIGINT, "DISTANCE" DOUBLE) => ?,
+	OUT o_edges TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "WEIGHT" DOUBLE) => ?
+	)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	VERTEX v_start = Vertex(:g, :i_startVertex);
+	GRAPH g_spoa = SHORTEST_PATHS_ONE_TO_ALL(:g, :v_start, "CALCULATED_COST", (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_direction);
+	o_vertices = SELECT :v."ID", :v."CALCULATED_COST" FOREACH v IN Vertices(:g_spoa);
+	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET", :e."WEIGHT" FOREACH e IN Edges(:g_spoa);
+END;
+

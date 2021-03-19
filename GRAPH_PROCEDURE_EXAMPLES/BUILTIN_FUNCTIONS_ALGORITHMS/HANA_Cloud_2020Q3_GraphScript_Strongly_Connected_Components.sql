@@ -45,7 +45,6 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 -- The procedure identifies the strongly Connected Components of a graph
 -- The procedure returns a table containing vertex keys and a COMPONENT attribute identifiying which vertices belong to the same SCC. The procedure returns also th number of SCCs
 
-DROP TYPE "GRAPHSCRIPT"."TT_SCC";
 CREATE TYPE "GRAPHSCRIPT"."TT_SCC" AS TABLE ("ID" BIGINT, "COMPONENT" BIGINT);
 
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_STRONGLY_CONNECTED_COMPONENTS"(
@@ -74,3 +73,23 @@ END;
 
 CALL "GRAPHSCRIPT"."GS_STRONGLY_CONNECTED_COMPONENTS"(o_scc => ?, o_componentsCount => ?);
 
+-- As an alternative you can also run the Strongly Connected Components as a so called anonymous block
+DO (
+	OUT o_scc TABLE ("ID" BIGINT, "COMPONENT" BIGINT) => ?,
+	OUT o_componentsCount BIGINT => ?
+)
+LANGUAGE GRAPH
+BEGIN
+	Graph g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE(BIGINT "COMPONENT");
+	BIGINT componentCounter = 0L;
+	Sequence<Sequence<Vertex>> m_scc = STRONGLY_CONNECTED_COMPONENTS(:g);
+	FOREACH m_component IN :m_scc {
+		componentCounter = :componentCounter + 1L;
+		FOREACH v IN :m_component {
+			v."COMPONENT" = :componentCounter;
+		}
+	}
+	o_scc = SELECT :v."ID", :v."COMPONENT" FOREACH v in Vertices(:g);
+	o_componentsCount = COUNT(:m_scc);
+END;

@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - (weakly) connected components and connectivity check
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q3
+-- 2021-03-01
+-- This script was developed for SAP HANA Cloud 2020 Q4
 -- Wikipedia https://en.wikipedia.org/wiki/Component_(graph_theory)
 /*************************************/
 
@@ -70,6 +70,7 @@ BEGIN
 	o_comps = :i;
 	o_res = SELECT :v."ID", :v."COMPONENT" FOREACH v IN Vertices(:g);
 END;
+
 CALL "GRAPHSCRIPT"."GS_CONNECTED_COMPONENTS"(?, ?);
 
 -- Optional: wrap procedure in SQLScript function for easy post-processing
@@ -86,14 +87,14 @@ SELECT "COMPONENT", COUNT(*) AS C FROM "GRAPHSCRIPT"."F_CONNECTED_COMPONENTS"() 
 
 /****************************************************/
 -- Ad-hoc procedure Connectivity Check
-DO (OUT o_connected BOOLEAN => ?) LANGUAGE GRAPH
+DO (OUT o_isConnected BOOLEAN => ?) LANGUAGE GRAPH
 BEGIN
 	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
 	BIGINT number_of_nodes = COUNT(VERTICES(:g));
 	IF (:number_of_nodes == 0L) { return; }
 	SEQUENCE<Vertex> s_v = Sequence<Vertex>(Vertices(:g));
-	o_connected = FALSE;
-	IF (COUNT(NEIGHBORS(:g, :s_v[1L], -1000000, 1000000, 'ANY')) == :number_of_nodes) {
-			o_connected = TRUE;
+	o_isConnected = FALSE;
+	IF (COUNT(REACHABLE_VERTICES(:g, :s_v[1L], 'ANY')) == :number_of_nodes) {
+			o_isConnected = TRUE;
 		}
 END;
