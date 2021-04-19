@@ -45,11 +45,11 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 
 
 /****************************************************/
--- Procedure Connected Components
+-- 2 Procedure Connected Components
 CREATE TYPE "GRAPHSCRIPT"."TT_OUT_VERTICES" AS TABLE ("ID" BIGINT, "COMPONENT" BIGINT);
 
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_CONNECTED_COMPONENTS" (
-	OUT o_comps BIGINT,
+	OUT o_components BIGINT,
 	OUT o_res "GRAPHSCRIPT"."TT_OUT_VERTICES"
 )
 LANGUAGE GRAPH READS SQL DATA AS
@@ -58,35 +58,77 @@ BEGIN
 	-- add a temporary attribute to store the component number
 	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "COMPONENT" = 0L);
 	BIGINT i = 0L;
-	FOREACH v_s IN Vertices(:g){
-		IF(:v_s."COMPONENT" == 0L) {
+	FOREACH v_start IN Vertices(:g){
+		IF(:v_start."COMPONENT" == 0L) {
 			i = :i + 1L;
 			-- all reachable neighbors are assigned the same component number > 0
-			FOREACH v_visited IN NEIGHBORS(:g, :v_s, -1000000, 1000000, 'ANY') {
-    			v_visited."COMPONENT" = :i;
+			FOREACH v_reachable IN REACHABLE_VERTICES(:g, :v_start, 'ANY') {
+    			v_reachable."COMPONENT" = :i;
     		}
 		}
 	}
-	o_comps = :i;
+	o_components = :i;
 	o_res = SELECT :v."ID", :v."COMPONENT" FOREACH v IN Vertices(:g);
 END;
 
 CALL "GRAPHSCRIPT"."GS_CONNECTED_COMPONENTS"(?, ?);
 
--- Optional: wrap procedure in SQLScript function for easy post-processing
+
+
+/*************************************/
+-- 3 Connected Components wrapped in a table funciton
 CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_CONNECTED_COMPONENTS"()
     RETURNS "GRAPHSCRIPT"."TT_OUT_VERTICES"
 LANGUAGE SQLSCRIPT READS SQL DATA AS
 BEGIN
-	DECLARE o_comps BIGINT;
-    CALL "GRAPHSCRIPT"."GS_CONNECTED_COMPONENTS"(o_comps, o_res);
-    RETURN :O_RES;
+	DECLARE o_components BIGINT;
+    CALL "GRAPHSCRIPT"."GS_CONNECTED_COMPONENTS"(o_components, o_res);
+    RETURN :o_res;
 END;
-SELECT "COMPONENT", COUNT(*) AS C FROM "GRAPHSCRIPT"."F_CONNECTED_COMPONENTS"() GROUP BY "COMPONENT" ORDER BY C DESC;
+
+SELECT "COMPONENT", COUNT(*) AS "COUNT" FROM "GRAPHSCRIPT"."F_CONNECTED_COMPONENTS"() GROUP BY "COMPONENT" ORDER BY "COUNT" DESC;
+
+
+
+/*************************************/
+-- 4 Connected Components as anonymous block
+DO (
+	OUT o_components BIGINT => ?,
+	OUT o_res TABLE ("ID" BIGINT, "COMPONENT" BIGINT) => ?
+)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "COMPONENT" = 0L);
+	BIGINT i = 0L;
+	FOREACH v_start IN Vertices(:g){
+		IF(:v_start."COMPONENT" == 0L) {
+			i = :i + 1L;
+			FOREACH v_reachable IN REACHABLE_VERTICES(:g, :v_start, 'ANY') {
+    			v_reachable."COMPONENT" = :i;
+    		}
+		}
+	}
+	o_components = :i;
+	o_res = SELECT :v."ID", :v."COMPONENT" FOREACH v IN Vertices(:g);
+END;
+
+
 
 
 /****************************************************/
--- Ad-hoc procedure Connectivity Check
+-- 5 Connected Components histogramm as ad-hoc SQL Function
+SELECT * FROM SQL FUNCTION () RETURNS TABLE ("COMPONENT" BIGINT, "COUNT" BIGINT) 
+BEGIN
+	DECLARE o_components BIGINT;
+    CALL "GRAPHSCRIPT"."GS_CONNECTED_COMPONENTS"(o_components, o_res);
+    RETURN SELECT "COMPONENT", COUNT(*) AS "COUNT" FROM :o_res GROUP BY "COMPONENT" ORDER BY "COUNT" DESC;		
+END;
+
+
+
+/****************************************************/
+-- 6 Ad-hoc procedure Connectivity Check
 DO (OUT o_isConnected BOOLEAN => ?) LANGUAGE GRAPH
 BEGIN
 	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");

@@ -112,4 +112,5 @@ BEGIN
 	}
 	o_flow = SELECT :e."ID", :e."SOURCE", :e."TARGET", :e.capacity, :e.flow, :e.residualCapacity FOREACH e IN e_g IN edges(:g) WHERE :e_g.flow > 0.0;
 END;
+
 CALL "GRAPHSCRIPT"."GS_MAXIMUM_FLOW"(1, 4, 1000, ?, ?);

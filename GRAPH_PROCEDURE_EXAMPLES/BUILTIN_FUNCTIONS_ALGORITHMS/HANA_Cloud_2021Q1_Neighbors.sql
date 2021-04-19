@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the NEIGHBORS function
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2021-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 /*************************************/
 
@@ -39,7 +39,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 		KEY COLUMN "ID";
 
 /*************************************/
--- How to use the NEIGHBORS function in a GRAPH"Script" procedure.
+-- 2 How to use the NEIGHBORS function in a GRAPH"Script" procedure.
 -- The procedure identifies the neighbors, given four input parameters: i_startVertex, with a hop distance between i_minDepth and i_maxDepth, traversing edges in i_dir direction.
 -- The procedure returns a table containing vertex keys, the number of vertices, and the edge keys of the neighbor node-induced subgraph.
 
@@ -77,7 +77,8 @@ CALL "GRAPHSCRIPT"."GS_NEIGHBORS"(i_startVertex => 2, i_minDepth => 1, i_maxDept
 CALL "GRAPHSCRIPT"."GS_NEIGHBORS"(i_startVertex => 2, i_minDepth => 0, i_maxDepth => 2, i_dir => 'ANY', o_vertices => ?, o_verticesCount => ?, o_edges => ?);
 
 
--- Optional post-processing step: wrap a function around the GRAPH"Script" procedure that joins the result vertices to the edges
+/*************************************/
+-- 3 How to wrap the NEIGHBORS procedure in a table function.
 CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_NEIGHBORS"(
 	IN i_startVertex BIGINT,	-- the ID of the start vertex
 	IN i_minDepth BIGINT, 		-- the minimum hop distance
@@ -95,3 +96,29 @@ BEGIN
   END;
 
 SELECT * FROM "GRAPHSCRIPT"."F_NEIGHBORS"(i_startVertex => 1, i_minDepth => 0, i_maxDepth => 2, i_dir => 'ANY');
+
+
+
+
+/*************************************/
+-- 4 How to use the NEIGHBORS function in a GRAPH"Script" anonymous block.
+-- The code between BEGIN and END is the same as in the procedure.
+DO (
+	IN i_startVertex BIGINT => 1,	-- the key of the start vertex
+	IN i_minDepth BIGINT => 0, 		-- the minimum hop distance
+	IN i_maxDepth BIGINT => 2, 		-- the maximum hop distance
+	IN i_dir VARCHAR(10) => 'ANY',	-- the direction the edges are traversed: OUTGOING, INCOMING, ANY
+	OUT o_vertices TABLE ("ID" BIGINT, "NAME" VARCHAR(100)) => ?,
+	OUT o_verticesCount BIGINT => ?,
+	OUT o_edges TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT) => ?
+	)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	VERTEX v_start = Vertex(:g, :i_startVertex);
+	MULTISET<Vertex> m_neighbors = Neighbors(:g, :v_start, :i_minDepth, :i_maxDepth, :i_dir);
+	o_vertices = SELECT :v."ID", :v."NAME" FOREACH v IN :m_neighbors;
+	o_verticesCount = COUNT(:m_neighbors);
+	MULTISET<Edge> m_edges = EDGES(:g, :m_neighbors, :m_neighbors);
+	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET" FOREACH e IN :m_edges;
+END;

@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the SHORTEST_PATH function
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2021-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 /*************************************/
 
@@ -39,7 +39,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 		KEY COLUMN "ID";
 
 /*************************************/
--- How to use the SHORTEST_PATH function in a GRAPH"Script" procedure
+-- 2 How to use the SHORTEST_PATH function in a GRAPH"Script" procedure
 -- The procedure identifies the shortest path, given three input parameters: i_startVertex, i_endVertex, traversing edges in i_direction
 -- The procedure returns a table containing the path's vertices, edges, length (= hop distance), and weight (= sum of WEIGHT values)
 
@@ -49,9 +49,9 @@ CREATE TYPE "GRAPHSCRIPT"."TT_EDGES_SPOO" AS TABLE ("ID" BIGINT, "SOURCE" BIGINT
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_SPOO"(
 	IN i_startVertex BIGINT, 		-- the ID of the start vertex
 	IN i_endVertex BIGINT, 			-- the ID of the end vertex
-	IN i_direction NVARCHAR(10), 	-- the the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
-	OUT o_path_length BIGINT,		-- the hop distance between start and end
-	OUT o_path_weight DOUBLE,		-- the path weight/cost based on the WEIGHT attribute
+	IN i_dir NVARCHAR(10), 			-- the the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
+	OUT o_pathLength BIGINT,		-- the hop distance between start and end
+	OUT o_pathWeight DOUBLE,		-- the path weight/cost based on the WEIGHT attribute
 	OUT o_vertices "GRAPHSCRIPT"."TT_VERTICES_SPOO",
 	OUT o_edges "GRAPHSCRIPT"."TT_EDGES_SPOO"
 	)
@@ -61,33 +61,56 @@ BEGIN
 	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
 	-- Check if vertices exist
 	IF (NOT VERTEX_EXISTS(:g, :i_startVertex) OR NOT VERTEX_EXISTS(:g, :i_endVertex)) {
-		o_path_length = 0L;
-		o_path_weight = 0.0;
+		o_pathLength = 0L;
+		o_pathWeight = 0.0;
 		return;
 	}
 	-- Create an instance of the start/end vertex
 	VERTEX v_start = Vertex(:g, :i_startVertex);
 	VERTEX v_end = Vertex(:g, :i_endVertex);
 	-- Running shortest path using the WEIGHT column as cost
-	WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end, (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_direction);
+	WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end, (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_dir);
 	-- Project the results from the path
-	o_path_length = LENGTH(:p);
-	o_path_weight = WEIGHT(:p);
+	o_pathLength = LENGTH(:p);
+	o_pathWeight = WEIGHT(:p);
 	o_vertices = SELECT :v."ID", :VERTEX_ORDER FOREACH v IN Vertices(:p) WITH ORDINALITY AS VERTEX_ORDER;
 	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET", :EDGE_ORDER FOREACH e IN Edges(:p) WITH ORDINALITY AS EDGE_ORDER;
 END;
 
 -- Finding the shortest path between vertex "1" and "4", traversing edges in any direction
-CALL "GRAPHSCRIPT"."GS_SPOO"(i_startVertex => 1, i_endVertex => 4, i_direction => 'ANY', o_path_length => ?, o_path_weight => ?, o_vertices => ?, o_edges => ?);
+CALL "GRAPHSCRIPT"."GS_SPOO"(i_startVertex => 1, i_endVertex => 4, i_dir => 'ANY', o_pathLength => ?, o_pathWeight => ?, o_vertices => ?, o_edges => ?);
 
 
--- As an alternative you can run the Shortest path as a so called anonymous block
+
+/*************************************/
+-- 3 How to wrap the SPOO procedure in a table function.
+CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_SPOO_EDGES" (
+	IN i_startVertex BIGINT, 		-- the ID of the start vertex
+	IN i_endVertex BIGINT, 			-- the ID of the end vertex
+	IN i_dir NVARCHAR(10) 	-- the the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
+	)
+	RETURNS TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "EDGE_ORDER" BIGINT)
+LANGUAGE SQLSCRIPT READS SQL DATA AS
+BEGIN
+	DECLARE o_pathLength BIGINT;
+	DECLARE o_pathWeight DOUBLE;
+	CALL "GRAPHSCRIPT"."GS_SPOO"(:i_startVertex, :i_endVertex, :i_dir, o_pathLength, o_pathWeight, o_vertices, o_edges);
+	RETURN :o_edges;
+END;
+
+SELECT * FROM "GRAPHSCRIPT"."F_SPOO_EDGES"(1, 4, 'ANY');
+
+
+
+/*************************************/
+-- 4 How to use the SPOO in a GRAPH"Script" anonymous block.
+-- The code between BEGIN and END is the same as in the procedure.
 DO (
 	IN i_startVertex BIGINT => 1,
 	IN i_endVertex BIGINT => 4,
-	IN i_direction NVARCHAR(10) => 'ANY',
-	OUT o_path_length BIGINT => ?,
-	OUT o_path_weight DOUBLE => ?,
+	IN i_dir NVARCHAR(10) => 'ANY',
+	OUT o_pathLength BIGINT => ?,
+	OUT o_pathWeight DOUBLE => ?,
 	OUT o_vertices TABLE ("ID" BIGINT, "VERTEX_ORDER" BIGINT) => ?,
 	OUT o_edges TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "EDGE_ORDER" BIGINT) => ?
 	)
@@ -95,15 +118,15 @@ LANGUAGE GRAPH
 BEGIN
 	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
 	IF (NOT VERTEX_EXISTS(:g, :i_startVertex) OR NOT VERTEX_EXISTS(:g, :i_endVertex)) {
-		o_path_length = 0L;
-		o_path_weight = 0.0;
+		o_pathLength = 0L;
+		o_pathWeight = 0.0;
 		return;
 	}
 	VERTEX v_start = Vertex(:g, :i_startVertex);
 	VERTEX v_end = Vertex(:g, :i_endVertex);
-	WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end, (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_direction);
-	o_path_length = LENGTH(:p);
-	o_path_weight = WEIGHT(:p);
+	WeightedPath<DOUBLE> p = Shortest_Path(:g, :v_start, :v_end, (Edge e) => DOUBLE{ return :e."WEIGHT"; }, :i_dir);
+	o_pathLength = LENGTH(:p);
+	o_pathWeight = WEIGHT(:p);
 	o_vertices = SELECT :v."ID", :VERTEX_ORDER FOREACH v IN Vertices(:p) WITH ORDINALITY AS VERTEX_ORDER;
 	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET", :EDGE_ORDER FOREACH e IN Edges(:p) WITH ORDINALITY AS EDGE_ORDER;
 END;

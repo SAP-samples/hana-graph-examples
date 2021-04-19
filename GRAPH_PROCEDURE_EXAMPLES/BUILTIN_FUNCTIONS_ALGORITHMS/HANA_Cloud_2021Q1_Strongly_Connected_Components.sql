@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the Strongly Connected Components algorithm
--- version HC2020Q3_1.0
--- this script was developed for SAP HANA Cloud 2020 Q3
+-- 2021-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 -- see also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 -- Wikipedia https://en.wikipedia.org/wiki/Strongly_connected_component#:~:text=7%20External%20links-,Definitions,second%20vertex%20to%20the%20first. 
 /*************************************/
@@ -41,7 +41,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 		KEY COLUMN "ID";
 
 /*************************************/
--- How to use the SCC algorithm in a GRAPH"Script" procedure
+-- 2 How to use the SCC algorithm in a GRAPH"Script" procedure
 -- The procedure identifies the strongly Connected Components of a graph
 -- The procedure returns a table containing vertex keys and a COMPONENT attribute identifiying which vertices belong to the same SCC. The procedure returns also th number of SCCs
 
@@ -73,7 +73,10 @@ END;
 
 CALL "GRAPHSCRIPT"."GS_STRONGLY_CONNECTED_COMPONENTS"(o_scc => ?, o_componentsCount => ?);
 
--- As an alternative you can also run the Strongly Connected Components as a so called anonymous block
+
+/*************************************/
+-- 4 How to use the SCC in a GRAPH"Script" anonymous block.
+-- The code between BEGIN and END is the same as in the procedure.
 DO (
 	OUT o_scc TABLE ("ID" BIGINT, "COMPONENT" BIGINT) => ?,
 	OUT o_componentsCount BIGINT => ?

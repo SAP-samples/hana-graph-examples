@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - Triangle Counting
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2021-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 /*************************************/
 
 /*************************************/
@@ -60,3 +60,26 @@ BEGIN
 END;
 
 CALL "GRAPHSCRIPT"."GS_TRIANGLES"(?);
+
+
+
+/*************************************/
+--  Triangle count as anonymous block
+DO(
+	OUT o_triangleCount BIGINT => ?
+	)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT","GRAPHWS");
+	MULTISET<Vertex> m_n = Multiset<Vertex>(:g);
+	BIGINT triangleCount = 0L;
+	FOREACH v IN Vertices(:g){
+		-- get all the 1 hop neighbors of v (v is not in this set)
+		m_n = Neighbors(:g, :v, 1, 1, 'ANY');
+		--  now, count all the edges that connected these neighbors to each other
+		triangleCount = :triangleCount + COUNT(EDGES(:g, :m_n, :m_n));
+	}
+	-- Since every triangle is counted three times, the final number of triangles is:
+	o_triangleCount = :triangleCount / 3L;
+END;
+

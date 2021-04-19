@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the K_SHORTEST_PATH function
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2021-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 /*************************************/
 
@@ -40,7 +40,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 		KEY COLUMN "ID";
 
 /*************************************/
--- How to use the K_SHORTEST_PATH function in a GRAPH"Script" procedure
+-- 2 How to use the K_SHORTEST_PATH function in a GRAPH"Script" procedure
 -- The procedure identifies the top k shortest paths, given three input parameters: i_startVertex, i_endVertex, and i_k
 -- The procedure returns a table containing up to k paths: each path gets an individual path_id, and contains an ordered set of edges
 
@@ -80,7 +80,29 @@ END;
 -- Finding the top 2 shortest paths between vertex "1" and "4"
 CALL "GRAPHSCRIPT"."GS_TKSP"(i_startVertex => 1, i_endVertex => 4, i_k => 2, o_paths => ?);
 
--- As an alternative you can also run the Top k Shortest Paths as a so called anonymous block
+
+
+/*************************************/
+-- 3 How to wrap the BFS traversal procedure in a table function.
+CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_TKSP" (
+	IN i_startVertex BIGINT, 	-- the key of the start vertex
+	IN i_endVertex BIGINT, 		-- the key of the end vertex
+	IN i_k INT	 				-- the number of paths to be returned
+	)
+	RETURNS TABLE ("PATH_ID" INT, "PATH_LENGTH" BIGINT, "PATH_WEIGHT" DOUBLE, "EDGE_ID" BIGINT, "EDGE_ORDER" INT)
+LANGUAGE SQLSCRIPT READS SQL DATA AS
+BEGIN
+	CALL "GRAPHSCRIPT"."GS_TKSP"(:i_startVertex, :i_endVertex, :i_k, o_paths);
+	RETURN :o_paths;
+END;
+
+SELECT * FROM "GRAPHSCRIPT"."F_TKSP"(1, 4, 2);
+
+
+
+/*************************************/
+-- 4 How to use the TKSP function in a GRAPH"Script" anonymous block.
+-- The code between BEGIN and END is the same as in the procedure.
 DO (
 	IN i_startVertex BIGINT => 1,
 	IN i_endVertex BIGINT => 4,

@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the SHORTEST_PATH_ONE_TO_ALL function
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2020-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 /*************************************/
 
@@ -40,7 +40,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 		KEY COLUMN "ID";
 
 /*************************************/
--- How to use the SHORTEST_PATH_ONE_TO_ALL function in a GRAPH"Script" procedure
+-- 2 How to use the SHORTEST_PATH_ONE_TO_ALL function in a GRAPH"Script" procedure
 -- The procedure identifies the shortest paths, given two input parameters: i_startVertex, traversing edges in i_direction
 -- The procedure returns a table containing the reachable vertices, and traversed edges
 CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES_SPOA" AS TABLE ("ID" BIGINT, "DISTANCE" DOUBLE);
@@ -67,7 +67,29 @@ END;
 CALL "GRAPHSCRIPT"."GS_SPOA"(i_startVertex => 1, i_direction => 'OUTGOING', o_vertices => ?, o_edges => ?);
 CALL "GRAPHSCRIPT"."GS_SPOA"(i_startVertex => 1, i_direction => 'ANY', o_vertices => ?, o_edges => ?);
 
--- as an alternative, you can also run the Shortest Path On to All as a so called anonymous block 
+
+
+/*************************************/
+-- 3 How to wrap the SPOA procedure in a table function.
+CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_SPOA_VERTICES" (
+	IN i_startVertex BIGINT,
+	IN i_dir NVARCHAR(10),
+	IN i_maxDepth BIGINT
+	)
+	RETURNS TABLE ("ID" BIGINT, "DISTANCE" DOUBLE)
+LANGUAGE SQLSCRIPT READS SQL DATA AS
+BEGIN
+	CALL "GRAPHSCRIPT"."GS_SPOA"(:i_startVertex, :i_dir, o_vertices, o_edges);
+	RETURN SELECT * FROM :o_vertices;
+END;
+
+SELECT * FROM "GRAPHSCRIPT"."F_SPOA_VERTICES"(1, 'OUTGOING', 1000);
+
+
+
+/*************************************/
+-- 4 How to use the SPOA in a GRAPH"Script" anonymous block.
+-- The code between BEGIN and END is the same as in the procedure.
 DO (
 	IN i_startVertex BIGINT => 1,
 	IN i_direction NVARCHAR(10) => 'OUTGOING',

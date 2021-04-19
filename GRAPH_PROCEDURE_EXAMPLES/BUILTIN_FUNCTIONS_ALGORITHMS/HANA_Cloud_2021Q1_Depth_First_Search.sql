@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use Depth First Search statement
--- 2020-10-01
--- This script was developed for SAP HANA Cloud 2020 Q2
+-- 2021-04-15
+-- This script was developed for SAP HANA Cloud 2021 Q1
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/2020_03_QRC/en-US/2bd40d9848124781b27a37ce66344730.html
 -- Wikipedia https://en.wikipedia.org/wiki/Depth-first_search
 /*************************************/
@@ -43,7 +43,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 		KEY COLUMN "ID";
 
 /*************************************/
--- How to use the DFS traversal statement in a GRAPH"Script" procedure.
+-- 2 How to use the DFS traversal statement in a GRAPH"Script" procedure.
 -- The procedure traverses the graph in a depth first search manner, starting ftom i_startVertex
 -- The procedure returns a table containing vertex keys, their visit and exit order, and a level number indicating the hop distance from the startVertex.
 
@@ -80,10 +80,12 @@ BEGIN
 END;
 CALL "GRAPHSCRIPT"."GS_DEPTH_FIRST_SEARCH"(i_startVertex => 1, o_vertices => ?);
 
+
+
 /*************************************/
--- wrap the procedure in a function
+-- 3 How to wrap the DFS traversal procedure in a table function.
 CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_DEPTH_FIRST_SEARCH"( IN i_startVertex BIGINT )
-    RETURNS "GRAPHSCRIPT"."TT_VERTICES_DFS"
+    RETURNS TABLE ("ID" BIGINT, "VISIT_ORDER" BIGINT, "EXIT_ORDER" BIGINT, "LEVEL" BIGINT)
 LANGUAGE SQLSCRIPT READS SQL DATA AS
 BEGIN
     CALL "GRAPHSCRIPT"."GS_DEPTH_FIRST_SEARCH"(:i_startVertex, o_res);
@@ -91,3 +93,34 @@ BEGIN
 END;
 
 SELECT * FROM "GRAPHSCRIPT"."F_DEPTH_FIRST_SEARCH"(i_startVertex => 1) ORDER BY "VISIT_ORDER" ASC;
+
+
+
+/*************************************/
+-- 4 How to use the DFS traversal statement in a GRAPH"Script" anonymous block.
+-- The code between BEGIN and END is the same as in the procedure.
+DO (
+	IN i_startVertex BIGINT => 1,
+	OUT o_vertices TABLE ("ID" BIGINT, "VISIT_ORDER" BIGINT, "EXIT_ORDER" BIGINT, "LEVEL" BIGINT) => ?
+	)
+LANGUAGE GRAPH
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT","GRAPHWS");
+	BIGINT c_visit = 0L;
+	BIGINT c_exit = 0L;
+	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "VISIT_ORDER");
+	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "EXIT_ORDER");
+	ALTER g ADD TEMPORARY VERTEX ATTRIBUTE (BIGINT "LEVEL");
+	VERTEX v_start = Vertex(:g, :i_startVertex);
+	TRAVERSE DFS('OUTGOING') :g FROM :v_start
+		ON VISIT VERTEX (Vertex v_visited, BIGINT lvl) {
+			c_visit = :c_visit + 1L;
+			v_visited."VISIT_ORDER" = :c_visit;
+			v_visited."LEVEL" = :lvl;
+		}
+		ON EXIT VERTEX (Vertex v_exited) {
+			c_exit = :c_exit + 1L;
+			v_exited."EXIT_ORDER" = :c_exit;
+	};
+	o_vertices = SELECT :v."ID", :v."VISIT_ORDER", :v."EXIT_ORDER", :v."LEVEL" FOREACH v IN Vertices(:g);
+END;
