@@ -1,0 +1,72 @@
+/*************************************/
+-- SAP HANA Graph examples - How to work with composite keys
+-- 2020-10-01
+-- This script was developed for SAP HANA Cloud 2020 Q2
+-- the below also works with comp keys on the edges table.
+/*************************************/
+
+/*************************************/
+-- 1 Create schema, tables, graph workspace, and load some sample data
+DROP SCHEMA "GRAPHSCRIPT" CASCADE;
+CREATE SCHEMA "GRAPHSCRIPT";
+CREATE COLUMN TABLE "GRAPHSCRIPT"."VERTICES" (
+	"ID" BIGINT,
+	"TYPE" NVARCHAR(100),
+	PRIMARY KEY ("ID", "TYPE")
+);
+
+CREATE COLUMN TABLE "GRAPHSCRIPT"."EDGES" (
+	"ID" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	"SOURCE_ID" BIGINT NOT NULL,
+	"SOURCE_TYPE" NVARCHAR(100) NOT NULL,
+	"TARGET_ID" BIGINT NOT NULL,
+	"TARGET_TYPE" NVARCHAR(100) NOT NULL
+);
+
+INSERT INTO "GRAPHSCRIPT"."VERTICES" VALUES (1,'PERSON');
+INSERT INTO "GRAPHSCRIPT"."VERTICES" VALUES (1,'COMPANY');
+INSERT INTO "GRAPHSCRIPT"."VERTICES" VALUES (2,'COMPANY');
+INSERT INTO "GRAPHSCRIPT"."EDGES"("SOURCE_ID", "SOURCE_TYPE", "TARGET_ID", "TARGET_TYPE") VALUES (1, 'PERSON', 1, 'COMPANY');
+INSERT INTO "GRAPHSCRIPT"."EDGES"("SOURCE_ID", "SOURCE_TYPE", "TARGET_ID", "TARGET_TYPE") VALUES (1, 'PERSON', 2, 'COMPANY');
+
+CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
+	EDGE TABLE "GRAPHSCRIPT"."EDGES"
+		SOURCE COLUMN "SOURCE_ID", "SOURCE_TYPE"
+		TARGET COLUMN "TARGET_ID", "TARGET_TYPE"
+		KEY COLUMN "ID"
+	VERTEX TABLE "GRAPHSCRIPT"."VERTICES"
+		KEY COLUMN "ID", "TYPE";
+
+/*************************************/
+-- use composite keys in procedure
+
+CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES" AS TABLE ("ID" BIGINT, "TYPE" NVARCHAR(100));
+
+CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_COMP_KEYS"(
+	IN i_startID BIGINT,
+	IN i_startType NVARCHAR(100),
+	OUT o_vertices "GRAPHSCRIPT"."TT_VERTICES"
+	)
+LANGUAGE GRAPH READS SQL DATA AS
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT","GRAPHWS");
+	VERTEX v_start = Vertex(:g, :i_startID, :i_startType);
+	MULTISET<Vertex> m = Neighbors(:g, :v_start, 1, 1, 'ANY');
+	o_vertices = SELECT :v."ID", :v."TYPE" FOREACH v IN :m;
+END;
+
+CALL "GRAPHSCRIPT"."GS_COMP_KEYS"(i_startID => 1, i_startType => 'PERSON', o_vertices => ?);
+
+/*************************************/
+-- use composite keys in openCypher
+SELECT *
+	FROM OPENCYPHER_TABLE(
+		GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
+		QUERY 'MATCH (a)-[e]->(b) WHERE a.ID = 1 AND a.TYPE = ''PERSON''
+		RETURN b.ID AS B_ID, b.TYPE AS B_TYPE'
+	)
+;
+
+
+
+
