@@ -1,13 +1,15 @@
 /***********************************/
 -- 2021 Q2
 -- This script provides some template code for doing dependency analysis.
--- The scenario is described in this blog post: []
+-- The scenario is described in this blog post:
+-- https://blogs.sap.com/2021/05/19/know-your-dependencies-network-tracing-with-sap-hana-graph/
 /***********************************/
- 
+
 /***********************************/
 -- To run this script, you need a SAP HANA Cloud instance.
 -- You can get your own trial instance via https://www.sap.com/cmp/td/sap-hana-cloud-trial.html
--- Using the Database Explorer, upload the demo data from github []
+-- Using the Database Explorer, upload the demo data from github
+-- https://github.com/SAP-samples/hana-graph-examples/tree/main/DEPENDENCY_ANALYSIS/data
 /***********************************/
 
 /***********************************/
@@ -21,11 +23,11 @@ CREATE GRAPH WORKSPACE "DEPENDENCY_ANALYSIS"."PACKAGE_GRAPH"
 		SOURCE COLUMN "SOURCE"
 		TARGET COLUMN "TARGET"
 		KEY COLUMN "ID"
-	VERTEX TABLE "DEPENDENCY_ANALYSIS"."VERTICES" 
+	VERTEX TABLE "DEPENDENCY_ANALYSIS"."VERTICES"
 		KEY COLUMN "PACKAGE_NAME";
 
 
-	
+
 /****************************************/
 -- 1 Basic reachability using REACHABLE_VERTICES
 /****************************************/
@@ -66,7 +68,7 @@ END;
 
 
 -- extension: the rpocedure can also be wrapped in a function, so you can call it via a SQL SELECT statement
-CREATE OR REPLACE FUNCTION "DEPENDENCY_ANALYSIS"."F_REACHABLE_VERTICES" ( IN i_start NVARCHAR(5000), IN i_dir VARCHAR(10)	) 
+CREATE OR REPLACE FUNCTION "DEPENDENCY_ANALYSIS"."F_REACHABLE_VERTICES" ( IN i_start NVARCHAR(5000), IN i_dir VARCHAR(10)	)
 	RETURNS "DEPENDENCY_ANALYSIS"."TT_VERTICES"
 LANGUAGE SQLSCRIPT AS
 BEGIN
@@ -87,7 +89,7 @@ CREATE TYPE "DEPENDENCY_ANALYSIS"."TT_EDGES" AS TABLE ("ID" BIGINT, "SOURCE" NVA
 CREATE OR REPLACE PROCEDURE "DEPENDENCY_ANALYSIS"."GS_NEIGHBORS"(
 	IN i_start NVARCHAR(5000),	-- the key of the start vertex, which is its package name
 	IN i_dir VARCHAR(10),		-- the direction of the traversal: OUTGOING, INCOMING, ANY
-	IN i_min BIGINT, 			-- the minimum hop distance 
+	IN i_min BIGINT, 			-- the minimum hop distance
 	IN i_max BIGINT, 			-- the maximum hop distance
 	OUT o_vertices "DEPENDENCY_ANALYSIS"."TT_VERTICES", -- the output STRUCTURE
 	OUT o_edges "DEPENDENCY_ANALYSIS"."TT_EDGES" -- the output structure
@@ -174,7 +176,7 @@ BEGIN
 		v_visited."OUT_DEGREE" = OUT_DEGREE(:v_visited);
 		IF (:v_visited."VERSION" > '1' OR :v_visited."PACKAGE_NAME" == :i_start) {
 			IF ( OUT_DEGREE(:v_visited) == 0L OR IN_DEGREE(:v_visited) == 0L ) {
-				s_o_vertices = :s_o_vertices || :v_visited;		
+				s_o_vertices = :s_o_vertices || :v_visited;
 			}
 		}
 		ELSE { END TRAVERSE; }
@@ -227,8 +229,8 @@ END;
 -- to select the multiple start vertices, it is convenient to use the APPLY_FILTER operator in SQLScript
 CREATE OR REPLACE FUNCTION "DEPENDENCY_ANALYSIS"."F_REACHABLE_VERTICES_INTERSECTION" (
 	IN v_filter NVARCHAR(5000), IN i_dir VARCHAR(10)
-	) 
-	RETURNS "DEPENDENCY_ANALYSIS"."TT_VERTICES" 
+	)
+	RETURNS "DEPENDENCY_ANALYSIS"."TT_VERTICES"
 LANGUAGE SQLSCRIPT AS
 BEGIN
 	selectedVertices = APPLY_FILTER("DEPENDENCY_ANALYSIS"."VERTICES", :v_filter);
@@ -242,7 +244,7 @@ SELECT * FROM "DEPENDENCY_ANALYSIS"."F_REACHABLE_VERTICES_INTERSECTION"(' "PACKA
 
 /****************************************/
 -- 5 basic aggregation
-/****************************************/ 
+/****************************************/
 CREATE TYPE "DEPENDENCY_ANALYSIS"."TT_VERTICES_COU" AS TABLE ("PACKAGE_NAME" NVARCHAR(5000), "UPSTREAM_TOP_LEVEL_PACKAGES" BIGINT, "DOWNSTREAM_ROOT_PACKAGES" BIGINT);
 
 CREATE OR REPLACE PROCEDURE "DEPENDENCY_ANALYSIS"."GS_DEPENDENCY_COUNT"(
@@ -267,8 +269,8 @@ BEGIN
 END;
 
 -- wrap the procedure in a function to have full SQL available
-CREATE OR REPLACE FUNCTION "DEPENDENCY_ANALYSIS"."F_DEPENDENCY_COUNT"( ) 
-	RETURNS "DEPENDENCY_ANALYSIS"."TT_VERTICES_COU" 
+CREATE OR REPLACE FUNCTION "DEPENDENCY_ANALYSIS"."F_DEPENDENCY_COUNT"( )
+	RETURNS "DEPENDENCY_ANALYSIS"."TT_VERTICES_COU"
 LANGUAGE SQLSCRIPT AS
 BEGIN
 	CALL "DEPENDENCY_ANALYSIS"."GS_DEPENDENCY_COUNT"(o_vertices);
