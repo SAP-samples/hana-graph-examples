@@ -12,7 +12,7 @@ A more advanced script, specifically related to different variants of path findi
 
 Using the [POKEC](https://snap.stanford.edu/data/soc-Pokec.html) dataset, there is a script we used to benchmark sequential vs. [parallel execution](POKEC/POKEC_1k_SP_pairs_bench_sequential_and_parallel.sql) of 1000 shortest path queries. It serves as a template for using the MAP_MERGE operator to parallelize graph queries.
 
-In July 2021 the [SAP HANA Python Client API](https://pypi.org/project/hana-ml/) was enhanced and now includes functions to leverage HANA's multi-model capabilities including Spatial, Graph, and JSON Document Store. If you are a data scientist working in python take a look at the [Jupyter Notebook](NOTEBOOKS/WELLINGTON_STORMWATER/Wellington+Stormwater+Network+Analysis.ipynb) that demonstrates the use of the graph extensions on the Wellington stormwater network network.
+In July 2021 the [SAP HANA Python Client API](https://pypi.org/project/hana-ml/) was enhanced and now includes functions to leverage HANA's multi-model capabilities including Spatial, Graph, and JSON Document Store. If you are a data scientist working in python take a look at the [Jupyter Notebook](NOTEBOOKS/WELLINGTON_STORMWATER/Wellington%20Stormwater%20Network%20Analysis.ipynb) that demonstrates the use of the graph extensions on the Wellington stormwater network network.
 
 Using London street network data, there is a script that demonstrates [how to calculate isochrones](ISOCHRONES/README.md) using the graph engine's built-in shortest path one-to-all algorithm and some HANA-native spatial post processing.
 
