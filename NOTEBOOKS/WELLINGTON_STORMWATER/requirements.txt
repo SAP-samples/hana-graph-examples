@@ -66,7 +66,6 @@ pandas @ file:///C:/ci/pandas_1624383612827/work
 pandocfilters @ file:///C:/ci/pandocfilters_1605102497129/work
 parso @ file:///tmp/build/80754af9/parso_1617223946239/work
 pickleshare @ file:///tmp/build/80754af9/pickleshare_1606932040724/work
-Pillow==8.3.1
 prometheus-client @ file:///tmp/build/80754af9/prometheus_client_1623189609245/work
 prompt-toolkit==3.0.19
 pycparser @ file:///tmp/build/80754af9/pycparser_1594388511720/work
