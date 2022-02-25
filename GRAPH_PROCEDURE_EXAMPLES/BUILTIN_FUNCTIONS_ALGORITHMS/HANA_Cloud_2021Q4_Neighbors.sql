@@ -1,7 +1,7 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the NEIGHBORS function
--- 2021-04-15
--- This script was developed for SAP HANA Cloud 2021 Q1
+-- 2022-02-25
+-- This script was developed for SAP HANA Cloud 2021 Q4
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 /*************************************/
 
@@ -97,6 +97,21 @@ BEGIN
 
 SELECT * FROM "GRAPHSCRIPT"."F_NEIGHBORS"(i_startVertex => 1, i_minDepth => 0, i_maxDepth => 2, i_dir => 'ANY');
 
+-- better alternative: write a GRAPH table function
+CREATE OR REPLACE FUNCTION "GRAPHSCRIPT"."F_NEIGHBORS"(
+	IN i_startVertex BIGINT,	-- the ID of the start vertex
+	IN i_minDepth BIGINT, 		-- the minimum hop distance
+	IN i_maxDepth BIGINT, 		-- the maximum hop distance
+	IN i_dir VARCHAR(10)		-- the direction the edges are traversed: OUTGOING, INCOMING, ANY
+	)
+    RETURNS TABLE("ID" BIGINT)
+LANGUAGE GRAPH READS SQL DATA AS
+BEGIN
+	GRAPH g = Graph("GRAPHSCRIPT", "GRAPHWS");
+	RETURN SELECT :v."ID" FOREACH v IN Neighbors(:g, Vertex(:g, :i_startVertex), :i_minDepth, :i_maxDepth, :i_dir);
+END;
+
+SELECT * FROM "GRAPHSCRIPT"."F_NEIGHBORS"(i_startVertex => 1, i_minDepth => 0, i_maxDepth => 2, i_dir => 'ANY');
 
 
 
@@ -122,3 +137,6 @@ BEGIN
 	MULTISET<Edge> m_edges = EDGES(:g, :m_neighbors, :m_neighbors);
 	o_edges = SELECT :e."ID", :e."SOURCE", :e."TARGET" FOREACH e IN :m_edges;
 END;
+
+
+
