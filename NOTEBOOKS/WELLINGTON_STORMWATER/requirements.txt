@@ -29,7 +29,7 @@ htmlmin==0.1.12
 idna @ file:///home/linux1/recipes/ci/idna_1610986105248/work
 importlib-metadata @ file:///C:/ci/importlib-metadata_1617877484576/work
 ipykernel==6.0.1
-ipython==7.25.0
+ipython>=7.31.1
 ipython-genutils @ file:///tmp/build/80754af9/ipython_genutils_1606773439826/work
 ipywidgets==7.6.3
 jedi==0.18.0
