@@ -1,6 +1,6 @@
 /*************************************/
 -- SAP HANA Graph examples - How to use the SHORTEST_PATH function
--- 2021-04-15
+-- 2022-05-09
 -- This script was developed for SAP HANA Cloud 2021 Q1
 -- See also https://help.sap.com/viewer/11afa2e60a5f4192a381df30f94863f9/cloud/en-US/3b0a971b129c446c9e40a797bdb29c2b.html
 /*************************************/
@@ -42,18 +42,14 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 -- 2 How to use the SHORTEST_PATH function in a GRAPH"Script" procedure
 -- The procedure identifies the shortest path, given three input parameters: i_startVertex, i_endVertex, traversing edges in i_direction
 -- The procedure returns a table containing the path's vertices, edges, length (= hop distance), and weight (= sum of WEIGHT values)
-
-CREATE TYPE "GRAPHSCRIPT"."TT_VERTICES_SPOO" AS TABLE ("ID" BIGINT, "VERTEX_ORDER" BIGINT);
-CREATE TYPE "GRAPHSCRIPT"."TT_EDGES_SPOO" AS TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "EDGE_ORDER" BIGINT);
-
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_SPOO"(
 	IN i_startVertex BIGINT, 		-- the ID of the start vertex
 	IN i_endVertex BIGINT, 			-- the ID of the end vertex
 	IN i_dir NVARCHAR(10), 			-- the the direction of the edge traversal: OUTGOING (default), INCOMING, ANY
 	OUT o_pathLength BIGINT,		-- the hop distance between start and end
 	OUT o_pathWeight DOUBLE,		-- the path weight/cost based on the WEIGHT attribute
-	OUT o_vertices "GRAPHSCRIPT"."TT_VERTICES_SPOO",
-	OUT o_edges "GRAPHSCRIPT"."TT_EDGES_SPOO"
+	OUT o_vertices TABLE ("ID" BIGINT, "VERTEX_ORDER" BIGINT), -- the set of vertices returned by the procedure
+	OUT o_edges TABLE ("ID" BIGINT, "SOURCE" BIGINT, "TARGET" BIGINT, "EDGE_ORDER" BIGINT) -- the set of edges returned by the procedure
 	)
 LANGUAGE GRAPH READS SQL DATA AS
 BEGIN
