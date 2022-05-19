@@ -1,0 +1,1 @@
+This script explains different vairant variants of path finding in SAP HANA Graph. It is based on a flight routes dataset [OPENFLIGHTS](https://github.com/SAP-samples/hana-graph-examples/blob/main/OPENFLIGHTS/OPENFLIGHTS_shortest_paths.sql).

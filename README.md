@@ -16,6 +16,8 @@ In July 2021 the [SAP HANA Python Client API](https://pypi.org/project/hana-ml/)
 
 Using London street network data, there is a script that demonstrates [how to calculate isochrones](ISOCHRONES/README.md) using the graph engine's built-in shortest path one-to-all algorithm and some HANA-native spatial post processing.
 
+The [Wellington stormwater](./WELLINGTON_STORMWATER/README.md) scenario describes how to estimate risk using graph analysis. It uses HANA Spatial features to estimate the load on a waternetowkr in case of rain. Graph analysis is then used to understand how the water flows through the network.
+
 ## Requirements
 In order to run the examples yourself you need a SAP HANA Cloud system and a basic understand of SQL or python. To get a system yourself, just [register for a trial](https://www.sap.com/cmp/td/sap-hana-cloud-trial.html?source=hana-analytics-web) and take a look at this [tutorial](https://developers.sap.com/tutorials/hana-trial-advanced-analytics.html). Once set up and connected, you just need to open the SQL Editor of the SAP HANA Database Explorer and run the statements in the script, or connect one of the Jupyter Notebooks.
 Some of the examples are self-contained, others are made for external datasets (e.g. https://openflights.org/data.html) which can be downloaded and imported into HANA tables.
