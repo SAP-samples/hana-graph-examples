@@ -41,8 +41,11 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 
 /*************************************/
 -- 2 How to use the community detection algorithm in a GRAPH"Script" procedure
--- The procedure identifies the strongly Connected Components of a graph
--- The procedure returns a table containing vertex keys and a COMPONENT attribute identifiying which vertices belong to the same SCC. The procedure returns also th number of SCCs
+-- The procedure identifies the communities of a graph
+-- The procedure returns
+	-- the number of communities
+	-- the community histogram
+	-- a table with vertex keys and the community IID
 
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_COMMUNITY" (
 	IN i_runs INT DEFAULT 1,
