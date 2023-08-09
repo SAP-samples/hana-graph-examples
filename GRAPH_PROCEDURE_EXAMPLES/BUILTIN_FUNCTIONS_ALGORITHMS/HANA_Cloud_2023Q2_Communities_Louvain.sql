@@ -50,6 +50,7 @@ CREATE GRAPH WORKSPACE "GRAPHSCRIPT"."GRAPHWS"
 CREATE OR REPLACE PROCEDURE "GRAPHSCRIPT"."GS_COMMUNITY" (
 	IN i_runs INT DEFAULT 1,
 	OUT o_numberOfCommunities BIGINT,
+	OUT o_modularity DOUBLE,
 	OUT o_communityHistogram TABLE("$COMMUNITY_ID" BIGINT, "$COUNT" BIGINT),
 	OUT o_res TABLE("ID" BIGINT, "$COMMUNITY_ID" BIGINT)
 )
@@ -60,6 +61,9 @@ BEGIN
 	--SEQUENCE<MULTISET<VERTEX>> communities = COMMUNITIES_LOUVAIN(:g, :i_runs, (Edge e) => DOUBLE{ return 1.0/:e."LENGTH"; } );
 	-- counting the elements in the communites SEQUENCE provides the number of communities found
 	o_numberOfCommunities = COUNT(:communities);
+	-- get the Modularity of the communities
+	o_modularity = MODULARITY(:g, :communities);
+	--o_modularity = MODULARITY(:g, :communities, (Edge e) => DOUBLE{ return 1.0; });
 	-- to get the number of vertices in each community, we count the elements in each community MULTISET, and write the results in the output table
 	BIGINT i = 0L;
 	FOREACH community IN :communities {
@@ -72,7 +76,7 @@ BEGIN
 	o_res = SELECT :v."ID", :m_vertexCommunity[:v] FOREACH v in VERTICES(:g);
 END;
 
-CALL "GRAPHSCRIPT"."GS_COMMUNITY"(i_runs => 1, o_numberOfCommunities => ?, o_communityHistogram => ?, o_res => ?);
+CALL "GRAPHSCRIPT"."GS_COMMUNITY"(i_runs => 1, o_numberOfCommunities => ?, o_modularity => ?, o_communityHistogram => ?, o_res => ?);
 
 
 
@@ -82,7 +86,7 @@ CALL "GRAPHSCRIPT"."GS_COMMUNITY"(i_runs => 1, o_numberOfCommunities => ?, o_com
 -- The code between BEGIN and END is the same as in the procedure.
 DO (
 	IN i_runs INT => 1,
-	OUT o_scalars TABLE ("NUMBER_OF_COMMUNITIES" BIGINT) => ?,
+	OUT o_scalars TABLE ("NUMBER_OF_COMMUNITIES" BIGINT, "MODULARITY" DOUBLE) => ?,
 	OUT o_communityHistogram TABLE("$COMMUNITY_ID" BIGINT, "$COUNT" BIGINT) => ?,
 	OUT o_res TABLE("ID" BIGINT, "$COMMUNITY_ID" BIGINT) => ?
 )
@@ -93,6 +97,7 @@ BEGIN
 	--SEQUENCE<MULTISET<VERTEX>> communities = COMMUNITIES_LOUVAIN(:g, :i_runs, (Edge e) => DOUBLE{ return 1.0/:e."LENGTH"; } );
 	-- counting the elements in the communites SEQUENCE provides the number of communities found
 	o_scalars."NUMBER_OF_COMMUNITIES"[1L] = COUNT(:communities);
+	o_scalars."MODULARITY"[1L] = MODULARITY(:g, :communities);
 	-- to get the number of vertices in each community, we count the elements in each community MULTISET, and write the results in the output table
 	BIGINT i = 0L;
 	FOREACH community IN :communities {
